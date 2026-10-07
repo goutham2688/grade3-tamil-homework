@@ -50,6 +50,9 @@ h1{font-size:24px;margin:8px 0 2px;text-align:center}
 .topbar h2{flex:1;margin:0;font-size:19px}
 .note{font-size:12px;color:#98a2b3;text-align:center;margin-top:18px;line-height:1.5}
 .hidden{display:none!important}
+.wordbanner{background:#fffaeb;border:1px solid #fedf89;border-radius:12px;padding:10px 12px;margin:0 0 10px}
+.wb-label{font-size:13px;color:#b54708;margin-bottom:2px}
+.wb-word{font-size:26px;font-weight:800;letter-spacing:1px}
 </style>
 </head>
 <body>
@@ -72,8 +75,13 @@ h1{font-size:24px;margin:8px 0 2px;text-align:center}
   </div>
   <div class="prog"><div id="pracBar" style="width:0%"></div></div>
   <div class="card">
-    <button class="listen" id="listenBtn" aria-label="hear the word">🔊</button>
-    <div class="hint" id="wordHint">Tap 🔊 to hear the word, then spell it</div>
+    <div class="wordbanner" id="wordBanner">
+      <div class="wb-label">📢 Parent — say this word aloud:</div>
+      <div class="wb-word" id="wbWord"></div>
+    </div>
+    <button class="btn-ghost" id="toggleWordBtn" style="font-size:13px;margin-bottom:8px">🙈 hide the word</button>
+    <div><button class="listen" id="listenBtn" aria-label="hear the word">🔊</button></div>
+    <div class="hint" id="wordHint">Read the word aloud, then have him spell it below</div>
     <input id="answer" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="type the spelling">
     <button class="btn btn-pri" id="checkBtn">Check</button>
     <div class="feedback" id="feedback"></div>
@@ -214,7 +222,7 @@ function nextCard(){
   var w=sess.queue[sess.idx];
   $("pracCount").textContent=(sess.idx+1)+" / "+sess.queue.length;
   $("pracBar").style.width=(100*sess.idx/sess.queue.length)+"%";
-  $("wordHint").textContent="Tap 🔊 to hear the word, then spell it";
+  renderWordBanner(w);
   $("answer").value="";$("answer").disabled=false;
   $("feedback").className="feedback";$("feedback").innerHTML="";
   $("nextBtn").classList.add("hidden");$("checkBtn").classList.remove("hidden");
@@ -290,6 +298,17 @@ function showWords(deckId){
 }
 
 /* ============ WIRE UP ============ */
+function renderWordBanner(w){
+  var show=store.showWord!==false; /* default: shown for parent-guided practice */
+  $("wordBanner").style.display=show?"":"none";
+  if(show)$("wbWord").textContent=w;
+  $("toggleWordBtn").textContent=show?"🙈 hide the word":"👁 show the word (parent)";
+  $("wordHint").textContent=show?"Read the word aloud, then have him spell it below":"Tap 🔊 to hear the word, then spell it";
+}
+$("toggleWordBtn").onclick=function(){
+  store.showWord=!(store.showWord!==false);
+  saveStore();renderWordBanner(sess.queue[sess.idx]);
+};
 $("listenBtn").onclick=function(){speak(sess.queue[sess.idx]);};
 $("checkBtn").onclick=checkAnswer;
 $("answer").addEventListener("keydown",function(e){if(e.key==="Enter")checkAnswer();});
