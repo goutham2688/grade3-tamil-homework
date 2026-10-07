@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Spelling Bee Practice</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#f2f5fa;color:#1c2430;touch-action:manipulation}
+.screen{display:none;max-width:640px;margin:0 auto;padding:16px 14px 90px;min-height:100vh}
+.screen.active{display:block}
+h1{font-size:24px;margin:8px 0 2px;text-align:center}
+.sub{text-align:center;color:#667085;font-size:14px;margin:0 0 16px}
+.streak{text-align:center;font-size:15px;margin:0 0 14px;color:#b54708;background:#fffaeb;border:1px solid #fedf89;border-radius:12px;padding:8px}
+.deck{background:#fff;border-radius:14px;padding:14px;margin:0 0 12px;box-shadow:0 1px 4px rgba(0,0,0,.08);border:1px solid #e4e9f2}
+.deck .t{font-size:17px;font-weight:700}
+.deck .meta{font-size:13px;color:#667085;margin:4px 0 10px}
+.deck .row{display:flex;gap:8px}
+.btn{flex:1;border:none;border-radius:12px;padding:13px 10px;font-size:16px;font-weight:700;cursor:pointer}
+.btn-pri{background:#0b5fa5;color:#fff}
+.btn-sec{background:#eef2f7;color:#0b5fa5}
+.btn-ghost{background:transparent;color:#0b5fa5;padding:8px}
+.btn:active{transform:scale(.97)}
+.card{background:#fff;border-radius:16px;padding:22px 16px;margin:12px 0;box-shadow:0 2px 8px rgba(0,0,0,.08);border:1px solid #e4e9f2;text-align:center}
+.prog{height:8px;background:#e4e9f2;border-radius:99px;overflow:hidden;margin:8px 0}
+.prog>div{height:100%;background:#0b5fa5;border-radius:99px;transition:width .25s}
+.topline{display:flex;align-items:center;justify-content:space-between;font-size:14px;color:#667085}
+.listen{width:96px;height:96px;border-radius:50%;border:none;background:#0b5fa5;color:#fff;font-size:40px;cursor:pointer;margin:6px 0 10px;box-shadow:0 4px 12px rgba(11,95,165,.35)}
+.listen:active{transform:scale(.94)}
+.hint{font-size:14px;color:#667085;margin:6px 0 12px}
+#answer{width:100%;font-size:22px;padding:14px;border:2px solid #d0d7e3;border-radius:12px;text-align:center;letter-spacing:1px}
+#answer:focus{outline:none;border-color:#0b5fa5}
+#checkBtn{width:100%;margin-top:12px}
+.feedback{min-height:76px;margin-top:10px;font-size:17px;font-weight:600}
+.feedback.ok{color:#067647}
+.feedback.no{color:#b42318}
+.feedback .corr{display:block;margin-top:6px;font-size:20px}
+.feedback .corr a{color:#0b5fa5;font-size:14px;font-weight:400;margin-left:8px}
+.bigscore{font-size:52px;font-weight:800;text-align:center;margin:10px 0 2px}
+.scoreline{text-align:center;color:#667085;margin:0 0 14px}
+.missed{background:#fff;border-radius:12px;padding:10px 14px;margin:0 0 8px;border:1px solid #e4e9f2;display:flex;align-items:center;gap:8px}
+.missed .w{flex:1;font-size:17px;font-weight:600}
+.missed .mine{font-size:13px;color:#b42318}
+.iconbtn{border:none;background:#eef2f7;border-radius:10px;font-size:18px;padding:8px 10px;cursor:pointer}
+.wordgrid{display:flex;flex-wrap:wrap;gap:8px}
+.wchip{background:#fff;border:1px solid #e4e9f2;border-radius:10px;padding:8px 10px;font-size:15px;display:flex;align-items:center;gap:6px}
+.wchip.done{border-color:#a6f4c5;background:#ecfdf3}
+.wchip .s{font-size:14px}
+.topbar{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.topbar h2{flex:1;margin:0;font-size:19px}
+.note{font-size:12px;color:#98a2b3;text-align:center;margin-top:18px;line-height:1.5}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div id="screen-home" class="screen active">
+  <h1>🐝 Spelling Bee Practice</h1>
+  <p class="sub">Scripps 2026–2027 study words · hear it, spell it</p>
+  <div class="streak" id="streakLine">🔥 Start your streak today!</div>
+  <div id="deckList"></div>
+  <p class="note">Progress saves on this device automatically.<br><button class="btn-ghost" id="resetBtn" style="font-size:12px">reset all progress</button></p>
+</div>
+
+<!-- PRACTICE -->
+<div id="screen-practice" class="screen">
+  <div class="topbar">
+    <button class="iconbtn" id="quitBtn" aria-label="back">‹</button>
+    <h2 id="pracTitle">Practice</h2>
+    <span id="pracCount" style="font-size:14px;color:#667085"></span>
+  </div>
+  <div class="prog"><div id="pracBar" style="width:0%"></div></div>
+  <div class="card">
+    <button class="listen" id="listenBtn" aria-label="hear the word">🔊</button>
+    <div class="hint" id="wordHint">Tap 🔊 to hear the word, then spell it</div>
+    <input id="answer" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="type the spelling">
+    <button class="btn btn-pri" id="checkBtn">Check</button>
+    <div class="feedback" id="feedback"></div>
+    <button class="btn btn-sec hidden" id="nextBtn" style="width:100%;margin-top:8px">Next →</button>
+  </div>
+  <p class="note">Tip: say the word out loud, then spell it — just like the real bee.</p>
+</div>
+
+<!-- RESULTS -->
+<div id="screen-results" class="screen">
+  <h1>Session done!</h1>
+  <div class="bigscore" id="scoreBig">0%</div>
+  <p class="scoreline" id="scoreLine"></p>
+  <div id="missedWrap"></div>
+  <div style="display:flex;gap:8px;margin-top:14px">
+    <button class="btn btn-sec" id="againBtn">Practice missed</button>
+    <button class="btn btn-pri" id="homeBtn">Done</button>
+  </div>
+</div>
+
+<!-- WORD LIST -->
+<div id="screen-words" class="screen">
+  <div class="topbar">
+    <button class="iconbtn" id="wordsBack" aria-label="back">‹</button>
+    <h2 id="wordsTitle">Words</h2>
+  </div>
+  <div class="wordgrid" id="wordGrid"></div>
+</div>
+
+<script>
+"use strict";
+/* ============ WORD DATA (Scripps 2026-2027) ============ */
+var DECKS=[
+{id:"g3",name:"One Bee · Grade 3",words:["illness","sloth","parade","indoors","finish","stout","library","mustard","narrow","hiking","remember","source","beasts","grumpily","humble","distance","frazzled","lead","knit","whistle","trouble","holiday","spiders","guide","company","medium","foolish","result","pearls","shivering","smoothly","seventy","breeze","bamboo","groan","cloak","total","relax","safety","entire","hospital","ginger","pennies","afraid","charming","tangy","barge","cottage","dangle","soared"]},
+{id:"g4",name:"Two Bee · Grade 4",words:["buttons","tiptoed","burlap","butterflies","carefully","tractor","fickle","boycotting","woven","custody","rigid","salary","lounge","December","business","versus","tissues","cuddle","clever","wetlands","kelp","sniffling","permit","relief","molten","proclaim","granola","fierce","disappear","jovial","duration","reinstate","lullaby","marlin","puffy","basement","invite","property","beneath","awning","lunar","elite","thimble","warrior","laughter","hurdler","inferior","dictionary","examine","opposite"]},
+{id:"g5",name:"Two Bee · Grade 5",words:["Halloween","incident","bifocals","fundraiser","organism","disappointment","helium","desperate","concentrate","stragglers","monorail","bratwurst","Oregon","solidarity","cartridge","civilian","synthetic","compliment","Japanese","cutlery","geologist","quail","truant","suggested","annoyance","piñata","albino","exploratory","alphabetical","rebuttal","calico","segregation","fertilizer","compromise","investment","chisel","bellowed","atmosphere","pamphlet","chimpanzees","interruption","territory","ridiculous","indigo","integrity","prejudice","sputnik","tortillas","apprentice","Caesar"]},
+{id:"g6",name:"Two Bee · Grade 6",words:["sorceress","suspension","convertible","collateral","perimeter","magnesium","hypothermia","cosmodrome","insurrection","persnickety","predecessor","duende","carrion","arnica","iridium","staccato","dachshund","glamorous","singularity","snarkiness","initiation","precedent","meticulous","optometrist","arthritis","regolith","fascism","Senegal","conscious","matrilineal","elliptical","adrenaline","rendezvous","Aeolus","salamanders","fictitious","battalion","mascara","materialize","haddock","megahertz","schnauzer","pentathletes","pheasants","reservoir","Polaroid","piteously","glaucoma","cemetery","romerillo"]},
+{id:"g7",name:"Three Bee · Grade 7",words:["newt","lapels","mortar","imperial","mewling","authority","lemmings","inanimate","appetizing","self-sufficient","tenuous","procession","hemisphere","torrential","cuisine","modish","settee","thrummed","generosity","unrelenting","persistent","generator","panoramic","decisively","frequency","sentinels","prospective","conspicuous","saxophone","seminal","reluctance","sauntered","influenza","unconscious","embankment","burnished","wallowing","arsonists","dominion","Doberman","gauntlets","auditory","blithely","subscription","preconception","perpendicular","canter","consulate","propeller","juniper"]},
+{id:"g8",name:"Three Bee · Grade 8",words:["odorant","palazzo","finesse","foliage","crocheted","irrelevant","curriculum","quizzically","apologetic","diplomatically","enigmatic","increments","Delaware","calibrate","hypothesis","reassurance","undulating","credenza","comprehensible","protectorate","brazier","phenomenon","trenchant","pulmonary","alleviate","despondent","approximation","phantasmal","legation","echolocation","censers","arachnid","diffidence","conflagration","pathologically","affinities","butane","thermotaxis","glycerin","embodiment","cataract","inaugurate","porpoises","quiche","bioluminescence","alabaster","psychological","euphemism","chickadee","arugula","assemblage","acolyte","asymmetric","vibrometer","leprosy","innocuous","shar-pei","mayonnaise","eureka","Tripoli","endothermy","sputum","annelids","neurological","éclair","cerulean","mysticetes","irascibility","cul-de-sac","kerosene","Eritrea","a cappella","electrolytes","Pennsylvania","forsythia","Amharic","ototoxic","ampulla","salicylic acid","Gloucester","Aphrodite","sensilla","stomatopods","prosciutto","bogong moth","eponymous","frankincense","chitinous","yakuza","Presbyterian","solenodon","trichobothria","Krio","Sierra Leone","lactobacillus","Cappadocia","Addis Ababa","vibrissae","Bildungsroman","spes phthisica"]}
+];
+/* alternate accepted spellings (preferred spelling shown) */
+var ALTS={"odorant":["odourant"],"brazier":["brasier"],"glycerin":["glycerine"],"kerosene":["kerosine"],"materialize":["materialise"],"fertilizer":["fertiliser"],"piñata":["pinata"],"éclair":["eclair"]};
+
+/* ============ STORAGE ============ */
+var LSKEY="spellingBee.v1";
+var store={words:{},streak:0,lastDay:null};
+function loadStore(){
+  try{var s=localStorage.getItem(LSKEY);if(s){store=JSON.parse(s);}}catch(e){store={words:{},streak:0,lastDay:null};}
+  if(!store.words)store.words={};
+}
+function saveStore(){try{localStorage.setItem(LSKEY,JSON.stringify(store));}catch(e){}}
+function wkey(deckId,w){return deckId+"|"+w.toLowerCase();}
+function wstate(deckId,w){var k=wkey(deckId,w);if(!store.words[k])store.words[k]={box:0,last:null};return store.words[k];}
+function todayStr(){var d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
+function daysBetween(a,b){if(!a||!b)return 999;var d1=new Date(a),d2=new Date(b);return Math.round((d2-d1)/864e5);}
+
+/* ============ HELPERS ============ */
+function $(id){return document.getElementById(id);}
+function show(id){document.querySelectorAll(".screen").forEach(function(s){s.classList.remove("active");});$(id).classList.add("active");window.scrollTo(0,0);}
+function norm(s){return s.toLowerCase().trim().replace(/\s+/g," ");}
+function accepted(word,typed){
+  var t=norm(typed);if(!t)return false;
+  var cands=[word].concat(ALTS[word]||[]);
+  for(var i=0;i<cands.length;i++){if(norm(cands[i])===t)return true;}
+  return false;
+}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function speak(word){
+  try{
+    speechSynthesis.cancel();
+    var u=new SpeechSynthesisUtterance(word);
+    u.lang="en-US";u.rate=0.72;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function mwLink(word){return "https://www.merriam-webster.com/dictionary/"+encodeURIComponent(word.replace(/ /g,"_"));}
+
+/* ============ SRS ============ */
+function dueWords(deck){
+  var t=todayStr(),out=[];
+  deck.words.forEach(function(w){
+    var st=wstate(deck.id,w);
+    var gap=daysBetween(st.last,t);
+    var due=st.box===0||(st.box===1&&gap>=1)||(st.box===2&&gap>=3);
+    if(due)out.push(w);
+  });
+  return out;
+}
+function masteredCount(deck){
+  var n=0;deck.words.forEach(function(w){if(wstate(deck.id,w).box>=2)n++;});
+  return n;
+}
+function bumpStreak(){
+  var t=todayStr();
+  if(store.lastDay===t)return;
+  var gap=daysBetween(store.lastDay,t);
+  store.streak=(gap===1)?(store.streak||0)+1:1;
+  store.lastDay=t;saveStore();
+}
+
+/* ============ HOME ============ */
+function renderHome(){
+  var t=todayStr();
+  if(store.streak>0&&daysBetween(store.lastDay,t)<=1){
+    $("streakLine").textContent="🔥 "+store.streak+" day"+(store.streak>1?"s":"")+" in a row — keep it up!";
+  }else{$("streakLine").textContent="🔥 Start your streak today!";}
+  var html="";
+  DECKS.forEach(function(d){
+    var due=dueWords(d).length,mst=masteredCount(d);
+    html+='<div class="deck"><div class="t">🐝 '+d.name+'</div>'+
+      '<div class="meta">'+d.words.length+' words · '+due+' due today · '+mst+' mastered</div>'+
+      '<div class="row"><button class="btn btn-pri" data-prac="'+d.id+'">Practice'+(due?' ('+due+')':'')+'</button>'+
+      '<button class="btn btn-sec" data-words="'+d.id+'">Words</button></div></div>';
+  });
+  $("deckList").innerHTML=html;
+  document.querySelectorAll("[data-prac]").forEach(function(b){b.onclick=function(){startSession(b.getAttribute("data-prac"),null);};});
+  document.querySelectorAll("[data-words]").forEach(function(b){b.onclick=function(){showWords(b.getAttribute("data-words"));};});
+}
+
+/* ============ PRACTICE ============ */
+var sess={deck:null,queue:[],idx:0,correct:0,missed:[],locked:false};
+function startSession(deckId,onlyWords){
+  var deck=DECKS.filter(function(d){return d.id===deckId;})[0];
+  var words=onlyWords&&onlyWords.length?onlyWords.slice():dueWords(deck);
+  if(!words.length){
+    // nothing due — offer full review
+    if(confirm("All caught up! Practice all "+deck.words.length+" words anyway?")){words=deck.words.slice();}
+    else return;
+  }
+  sess={deck:deck,queue:shuffle(words),idx:0,correct:0,missed:[],locked:false};
+  $("pracTitle").textContent=deck.name;
+  show("screen-practice");
+  nextCard();
+}
+function nextCard(){
+  sess.locked=false;
+  if(sess.idx>=sess.queue.length){endSession();return;}
+  var w=sess.queue[sess.idx];
+  $("pracCount").textContent=(sess.idx+1)+" / "+sess.queue.length;
+  $("pracBar").style.width=(100*sess.idx/sess.queue.length)+"%";
+  $("wordHint").textContent="Tap 🔊 to hear the word, then spell it";
+  $("answer").value="";$("answer").disabled=false;
+  $("feedback").className="feedback";$("feedback").innerHTML="";
+  $("nextBtn").classList.add("hidden");$("checkBtn").classList.remove("hidden");
+  setTimeout(function(){$("answer").focus();},150);
+  speak(w);
+}
+function checkAnswer(){
+  if(sess.locked)return;
+  var w=sess.queue[sess.idx];
+  var typed=$("answer").value;
+  if(!norm(typed)){$("answer").focus();return;}
+  sess.locked=true;
+  $("answer").disabled=true;$("checkBtn").classList.add("hidden");
+  var st=wstate(sess.deck.id,w),t=todayStr();
+  var fb=$("feedback");
+  if(accepted(w,typed)){
+    sess.correct++;st.box=Math.min(2,st.box+1);st.last=t;saveStore();
+    fb.className="feedback ok";fb.innerHTML="✓ Correct!";
+    setTimeout(function(){sess.idx++;nextCard();},850);
+  }else{
+    st.box=0;st.last=t;saveStore();
+    sess.missed.push({w:w,typed:typed});
+    // re-queue later in this session (Leitner)
+    var pos=sess.idx+2+Math.floor(Math.random()*3);
+    if(pos>=sess.queue.length)pos=sess.queue.length;
+    sess.queue.splice(pos,0,w);
+    fb.className="feedback no";
+    fb.innerHTML='✗ Not quite.<span class="corr">'+escapeHtml(w)+'<a href="'+mwLink(w)+'" target="_blank" rel="noopener">define ↗</a></span>';
+    $("nextBtn").classList.remove("hidden");
+    speak(w);
+  }
+}
+function escapeHtml(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function endSession(){
+  bumpStreak();
+  var total=sess.correct+sess.missed.length;
+  var pct=total?Math.round(100*sess.correct/total):0;
+  $("scoreBig").textContent=pct+"%";
+  $("scoreLine").textContent=sess.correct+" of "+total+" spelled right · 🔥 "+store.streak+" day streak";
+  var mw=$("missedWrap");
+  if(sess.missed.length){
+    var h='<div class="t" style="font-weight:700;margin:6px 0 8px">Words to review ('+sess.missed.length+')</div>';
+    var seen={};
+    sess.missed.forEach(function(m){
+      if(seen[m.w])return;seen[m.w]=1;
+      h+='<div class="missed"><div class="w">'+escapeHtml(m.w)+'<div class="mine">you wrote: '+escapeHtml(m.typed)+'</div></div>'+
+        '<button class="iconbtn" data-hear="'+escapeHtml(m.w)+'">🔊</button>'+
+        '<a class="iconbtn" style="text-decoration:none" href="'+mwLink(m.w)+'" target="_blank" rel="noopener">🔍</a></div>';
+    });
+    mw.innerHTML=h;
+    document.querySelectorAll("[data-hear]").forEach(function(b){b.onclick=function(){speak(b.getAttribute("data-hear"));};});
+    $("againBtn").classList.remove("hidden");
+  }else{
+    mw.innerHTML='<p class="sub">Perfect — nothing missed! 🎉</p>';
+    $("againBtn").classList.add("hidden");
+  }
+  show("screen-results");
+}
+
+/* ============ WORD LIST ============ */
+function showWords(deckId){
+  var deck=DECKS.filter(function(d){return d.id===deckId;})[0];
+  $("wordsTitle").textContent=deck.name;
+  var h="";
+  deck.words.forEach(function(w){
+    var done=wstate(deck.id,w).box>=2;
+    h+='<div class="wchip'+(done?' done':'')+'"><span>'+escapeHtml(w)+'</span>'+(done?'<span class="s">✓</span>':'')+
+       '<button class="iconbtn s" data-hear="'+escapeHtml(w)+'" style="padding:4px 6px">🔊</button></div>';
+  });
+  $("wordGrid").innerHTML=h;
+  document.querySelectorAll("#wordGrid [data-hear]").forEach(function(b){b.onclick=function(){speak(b.getAttribute("data-hear"));};});
+  show("screen-words");
+}
+
+/* ============ WIRE UP ============ */
+$("listenBtn").onclick=function(){speak(sess.queue[sess.idx]);};
+$("checkBtn").onclick=checkAnswer;
+$("answer").addEventListener("keydown",function(e){if(e.key==="Enter")checkAnswer();});
+$("nextBtn").onclick=function(){sess.idx++;nextCard();};
+$("quitBtn").onclick=function(){try{speechSynthesis.cancel();}catch(e){}renderHome();show("screen-home");};
+$("againBtn").onclick=function(){
+  var words=sess.missed.map(function(m){return m.w;});
+  var uniq=[];words.forEach(function(w){if(uniq.indexOf(w)<0)uniq.push(w);});
+  startSession(sess.deck.id,uniq);
+};
+$("homeBtn").onclick=function(){renderHome();show("screen-home");};
+$("wordsBack").onclick=function(){renderHome();show("screen-home");};
+$("resetBtn").onclick=function(){
+  if(confirm("Reset all spelling progress on this device?")){store={words:{},streak:0,lastDay:null};saveStore();renderHome();}
+};
+
+loadStore();
+renderHome();
+</script>
+</body>
+</html>
